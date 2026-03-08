@@ -7,7 +7,7 @@
     <style>
         /* Paleta de colores - Modo Oscuro Fijo */
         :root {
-            --primary-color: #0ea5e9; /* Azul cielo */
+            --primary-color: #0ea5e9; 
             --bg-color: #111827;
             --card-bg: #1f2937;
             --text-main: #f9fafb;
@@ -16,10 +16,10 @@
             --btn-bg: #1f2937;
             --btn-text: #0ea5e9;
             
-            /* Colores por persona para fácil lectura */
-            --color-seb: #3b82f6; /* Azul */
-            --color-ste: #10b981; /* Verde */
-            --color-san: #f59e0b; /* Naranja */
+            /* Colores por persona */
+            --color-seb: #3b82f6; 
+            --color-ste: #10b981; 
+            --color-san: #f59e0b; 
         }
 
         body {
@@ -62,7 +62,7 @@
             transition: all 0.3s ease;
             font-size: 15px;
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
             max-width: 200px;
         }
 
@@ -189,6 +189,10 @@
             margin-top: 5px;
         }
 
+        /* Clases para mostrar/ocultar nombres según pantalla */
+        .short-name { display: none; }
+        .full-name { display: inline; }
+
         /* Colores dinámicos */
         .bg-seb { background-color: rgba(59, 130, 246, 0.2); color: var(--color-seb); border: 1px solid rgba(59, 130, 246, 0.3); }
         .bg-ste { background-color: rgba(16, 185, 129, 0.2); color: var(--color-ste); border: 1px solid rgba(16, 185, 129, 0.3); }
@@ -198,17 +202,33 @@
         .border-ste { border-left-color: var(--color-ste) !important; }
         .border-san { border-left-color: var(--color-san) !important; }
 
+        /* OPTIMIZACIÓN PARA CELULARES */
         @media (max-width: 600px) {
-            .cal-person { font-size: 0.7rem; padding: 2px 0; }
-            .cal-cell { min-height: 60px; }
-            .cal-day-name { font-size: 0.8rem; }
+            body { padding: 10px; }
+            .tabs { gap: 5px; }
+            .tab-btn { padding: 10px 5px; font-size: 14px; }
+            
+            .calendar-grid { gap: 3px; }
+            .cal-day-name { font-size: 0.8rem; padding: 6px 0; }
+            .cal-cell { min-height: 65px; padding: 3px; }
+            .cal-date { font-size: 0.8rem; }
+            
+            .cal-person { 
+                font-size: 0.85rem; 
+                padding: 3px 0; 
+                letter-spacing: 0.5px;
+            }
+            
+            /* Acá ocurre la magia: Oculta el nombre completo y muestra la abreviación */
+            .full-name { display: none; }
+            .short-name { display: inline; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🗑️ Rotación de Basura</h1>
+    <h1> Rotación de Basura</h1>
 
     <div class="tabs">
         <button id="btn-day" class="tab-btn active" onclick="switchView('day')">Día Actual</button>
@@ -217,13 +237,11 @@
     </div>
 
     <div id="view-day" class="view-section active">
-        <div class="today-card" id="today-content">
-            </div>
+        <div class="today-card" id="today-content"></div>
     </div>
 
     <div id="view-week" class="view-section">
-        <div class="week-grid" id="week-content">
-            </div>
+        <div class="week-grid" id="week-content"></div>
     </div>
 
     <div id="view-month" class="view-section">
@@ -237,34 +255,28 @@
             <div class="cal-day-name">Sáb</div>
             <div class="cal-day-name">Dom</div>
         </div>
-        <div class="calendar-grid" id="calendar-content" style="margin-top: 5px;">
-            </div>
+        <div class="calendar-grid" id="calendar-content" style="margin-top: 5px;"></div>
     </div>
 </div>
 
 <script>
-    // Configuración base
     const people = ['Sebastián', 'Stéfano', 'Santiago'];
-    
-    // Usamos una fecha "época" fija en el pasado (Lunes 1 de Enero de 2024)
-    // A partir de esta fecha se calculan los turnos ininterrumpidamente.
     const epochDate = Date.UTC(2024, 0, 1); 
     
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    // Función mágica que calcula a quién le toca cualquier día de la historia
     function getPersonForDate(dateObj) {
         const targetDate = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
         const diffDays = Math.floor((targetDate - epochDate) / (1000 * 60 * 60 * 24));
         const index = diffDays % 3;
         return {
             name: people[index],
-            id: people[index].substring(0, 3).toLowerCase() // 'seb', 'sté'->'ste', 'san'
+            short: people[index].substring(0, 3), // Genera 'Seb', 'Sté', 'San'
+            id: people[index].substring(0, 3).toLowerCase() 
         };
     }
 
-    // Normalizar ID para las clases CSS (sacar tildes)
     function normalizeId(id) {
         if(id.includes('seb')) return 'seb';
         if(id.includes('st')) return 'ste';
@@ -272,13 +284,10 @@
         return '';
     }
 
-    // Renderizar Día Actual
     function renderDayView() {
         const today = new Date();
         const person = getPersonForDate(today);
         const cssId = normalizeId(person.id);
-        
-        // Obtener el color desde CSS para pintar el texto
         const colorVar = `var(--color-${cssId})`;
 
         document.getElementById('today-content').innerHTML = `
@@ -287,17 +296,14 @@
         `;
     }
 
-    // Renderizar Semana Actual (De Lunes a Domingo)
     function renderWeekView() {
         const today = new Date();
         const currentDay = today.getDay();
-        
-        // Calcular el Lunes de esta semana
         const diffToMonday = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
         const monday = new Date(today.setDate(diffToMonday));
 
         let html = '';
-        const todayStr = new Date().toDateString(); // Para saber cuál es hoy
+        const todayStr = new Date().toDateString(); 
 
         for (let i = 0; i < 7; i++) {
             const loopDate = new Date(monday);
@@ -322,7 +328,6 @@
         document.getElementById('week-content').innerHTML = html;
     }
 
-    // Renderizar Calendario Mensual
     function renderMonthView() {
         const today = new Date();
         const year = today.getFullYear();
@@ -332,19 +337,15 @@
 
         const firstDayOfMonth = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        // Ajustar para que la semana empiece en Lunes (0=Lun, 6=Dom)
         let startCol = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
         let html = '';
         const todayStr = new Date().toDateString();
 
-        // Celdas vacías previas al día 1
         for (let i = 0; i < startCol; i++) {
-            html += `<div class="cal-cell" style="background: transparent;"></div>`;
+            html += `<div class="cal-cell" style="background: transparent; border: none;"></div>`;
         }
 
-        // Días del mes
         for (let day = 1; day <= daysInMonth; day++) {
             const loopDate = new Date(year, month, day);
             const person = getPersonForDate(loopDate);
@@ -354,7 +355,10 @@
             html += `
                 <div class="cal-cell ${isToday ? 'today' : ''}">
                     <div class="cal-date">${day}</div>
-                    <div class="cal-person bg-${cssId}">${person.name}</div>
+                    <div class="cal-person bg-${cssId}">
+                        <span class="full-name">${person.name}</span>
+                        <span class="short-name">${person.short}</span>
+                    </div>
                 </div>
             `;
         }
@@ -372,17 +376,13 @@
         document.getElementById('view-month').classList.toggle('active', view === 'month');
     }
 
-    // Inicializar todo
     function init() {
-        // Restaurar a la fecha actual antes de renderizar (porque renderWeekView muta el today si no tenemos cuidado)
         renderDayView();
         renderWeekView();
         renderMonthView();
     }
 
     init();
-
-    // Actualizar una vez por hora por si la pestaña queda abierta días
     setInterval(init, 3600000); 
 
 </script>
